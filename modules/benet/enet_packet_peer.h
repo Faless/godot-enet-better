@@ -8,7 +8,7 @@
 
 class ENetPacketPeer : public NetworkedMultiplayerPeer {
 
-	GDCLASS(ENetPacketPeer, NetworkedMultiplayerPeer)
+	OBJ_TYPE(ENetPacketPeer, NetworkedMultiplayerPeer)
 public:
 	enum CompressionMode {
 		COMPRESS_NONE,
@@ -35,6 +35,7 @@ private:
 
 	uint32_t unique_id;
 
+	int channels;
 	int target_peer;
 	TransferMode transfer_mode;
 
@@ -52,6 +53,7 @@ private:
 
 		ENetPacket *packet;
 		int from;
+		int channel;
 	};
 
 	CompressionMode compression_mode;
@@ -83,8 +85,8 @@ public:
 
 	virtual int get_packet_peer() const;
 
-	Error create_server(int p_port, int p_max_peers = 32, int p_in_bandwidth = 0, int p_out_bandwidth = 0);
-	Error create_client(const IP_Address &p_ip, int p_port, int p_in_bandwidth = 0, int p_out_bandwidth = 0);
+	Error create_server(int p_port, int p_channels = 2, int p_max_peers = 32, int p_in_bandwidth = 0, int p_out_bandwidth = 0);
+	Error create_client(const IP_Address &p_ip, int p_port, int p_channels = 2, int p_in_bandwidth = 0, int p_out_bandwidth = 0);
 
 	void close_connection();
 
@@ -95,7 +97,10 @@ public:
 	virtual int get_available_packet_count() const;
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) const; ///< buffer is GONE after next get_packet
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size);
+	virtual Error put_packet_channel(const uint8_t *p_buffer, int p_buffer_size, int p_channel);
+	Error _put_packet_channel(const DVector<uint8_t> &p_buffer, int p_channel);
 
+	virtual int get_packet_channel() const;
 	virtual int get_max_packet_size() const;
 
 	virtual ConnectionStatus get_connection_status() const;
