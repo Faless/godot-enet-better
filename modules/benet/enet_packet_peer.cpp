@@ -219,6 +219,9 @@ void ENetPacketPeer::poll(){
 					//some config message
 					ERR_CONTINUE( event.packet->dataLength < 8);
 
+					// Only server can send config messages
+					ERR_CONTINUE( server );
+
 					int msg = decode_uint32(&event.packet->data[0]);
 					int id = decode_uint32(&event.packet->data[4]);
 
@@ -243,7 +246,7 @@ void ENetPacketPeer::poll(){
 					packet.packet = event.packet;
 					packet.channel = -1;
 
-					int *id = (int*)event.peer -> data;
+					uint32_t *id = (uint32_t*)event.peer->data;
 
 					ERR_CONTINUE(event.packet->dataLength<12)
 
@@ -256,6 +259,8 @@ void ENetPacketPeer::poll(){
 
 					if (server) {
 
+						// Someone is cheating and trying to fake the source!
+						ERR_CONTINUE(source!=*id);
 						packet.from=*id;
 
 						if (target==0) {
