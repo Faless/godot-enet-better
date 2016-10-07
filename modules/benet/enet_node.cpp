@@ -75,6 +75,38 @@ void ENetNode::_server_disconnected() {
 	emit_signal("server_disconnected");
 }
 
+Error ENetNode::broadcast(const DVector<uint8_t> &p_packet, int p_channel) {
+	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE, 0, p_packet, p_channel);
+}
+
+Error ENetNode::send(int p_id, const DVector<uint8_t> &p_packet, int p_channel) {
+	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE, p_id, p_packet, p_channel);
+}
+
+Error ENetNode::broadcast_unreliable(const DVector<uint8_t> &p_packet, int p_channel) {
+	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE, 0, p_packet, p_channel);
+}
+
+Error ENetNode::send_unreliable(int p_id, const DVector<uint8_t> &p_packet, int p_channel) {
+	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE, p_id, p_packet, p_channel);
+}
+
+Error ENetNode::broadcast_ordered(const DVector<uint8_t> &p_packet, int p_channel) {
+	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE_ORDERED, 0, p_packet, p_channel);
+}
+
+Error ENetNode::send_ordered(int p_id, const DVector<uint8_t> &p_packet, int p_channel) {
+	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE_ORDERED, p_id, p_packet, p_channel);
+}
+
+Error ENetNode::put_packet(NetworkedMultiplayerPeer::TransferMode p_mode, int p_target, const DVector<uint8_t> &p_packet, int p_channel) {
+	ERR_FAIL_COND_V(!network_peer.is_valid(),ERR_UNCONFIGURED);
+
+	network_peer->set_transfer_mode(p_mode);
+	network_peer->set_target_peer(p_target);
+	return network_peer->_put_packet_channel(p_packet, p_channel);
+}
+
 void ENetNode::_network_poll() {
 
 	if (!network_peer.is_valid() || network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED)
@@ -111,7 +143,12 @@ void ENetNode::_network_poll() {
 				ERR_PRINT("Error getting packet!");
 			}
 
-			emit_signal("network_peer_packet", sender, channel, pkt);
+			if(sender == 1) {
+				emit_signal("server_packet", channel, pkt);
+			}
+			else {
+				emit_signal("peer_packet", sender, channel, pkt);
+			}
 
 		}
 
@@ -314,10 +351,13 @@ void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int 
 void ENetNode::_bind_methods() {
 	ADD_SIGNAL( MethodInfo("network_peer_connected",PropertyInfo(Variant::INT,"id")));
 	ADD_SIGNAL( MethodInfo("network_peer_disconnected",PropertyInfo(Variant::INT,"id")));
-	ADD_SIGNAL( MethodInfo("network_peer_packet",PropertyInfo(Variant::INT,"peer"),PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
+
 	ADD_SIGNAL( MethodInfo("connected_to_server"));
 	ADD_SIGNAL( MethodInfo("connection_failed"));
 	ADD_SIGNAL( MethodInfo("server_disconnected"));
+
+	ADD_SIGNAL( MethodInfo("server_packet",PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
+	ADD_SIGNAL( MethodInfo("peer_packet",PropertyInfo(Variant::INT,"peer"),PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
 
 	ObjectTypeDB::bind_method(_MD("_on_idle_frame"),&ENetNode::_on_idle_frame);
 	ObjectTypeDB::bind_method(_MD("set_network_peer","peer:ENetPacketPeer"),&ENetNode::set_network_peer);
@@ -326,6 +366,19 @@ void ENetNode::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("_connected_to_server"),&ENetNode::_connected_to_server);
 	ObjectTypeDB::bind_method(_MD("_connection_failed"),&ENetNode::_connection_failed);
 	ObjectTypeDB::bind_method(_MD("_server_disconnected"),&ENetNode::_server_disconnected);
+
+	// General purpose method
+	ObjectTypeDB::bind_method(_MD("put_packet:Error", "mode:TransferMode", "target:int", "pkt:RawArray","channel:int"),&ENetNode::put_packet);
+
+	// Reliable
+	ObjectTypeDB::bind_method(_MD("broadcast:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast);
+	ObjectTypeDB::bind_method(_MD("send:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send);
+	// Unreliable
+	ObjectTypeDB::bind_method(_MD("broadcast_unreliable:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_unreliable);
+	ObjectTypeDB::bind_method(_MD("send_unreliable:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_unreliable);
+	// Ordered
+	ObjectTypeDB::bind_method(_MD("broadcast_ordered:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_ordered);
+	ObjectTypeDB::bind_method(_MD("send_ordered:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_ordered);
 }
 
 ENetNode::ENetNode() {
