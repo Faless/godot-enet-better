@@ -240,11 +240,15 @@ void ENetPacketPeer::poll(){
 					}
 
 					enet_packet_destroy(event.packet);
-				} else if (event.channelID < SYSCH_MAX){
+				} else {
 
 					Packet packet;
 					packet.packet = event.packet;
 					packet.channel = -1;
+
+					if(event.channelID >= SYSCH_MAX) {
+						packet.channel = event.channelID - SYSCH_MAX;
+					}
 
 					uint32_t *id = (uint32_t*)event.peer->data;
 
@@ -312,20 +316,7 @@ void ENetPacketPeer::poll(){
 
 						incoming_packets.push_back(packet);
 					}
-
-
 					//destroy packet later..
-				} else {
-					Packet packet;
-					packet.packet = event.packet;
-					packet.channel=event.channelID-SYSCH_MAX;
-
-					ERR_CONTINUE(event.packet->dataLength<12)
-
-					uint32_t source = decode_uint32(&event.packet->data[0]);
-
-					packet.from=source;
-					incoming_packets.push_back(packet);
 				}
 
 
