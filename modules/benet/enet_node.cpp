@@ -2,21 +2,68 @@
 #include "modules/benet/enet_node.h"
 
 void ENetNode::_notification(int p_what) {
-	if(!is_inside_tree() || get_tree()->is_editor_hint())
+	if(!is_inside_tree() || get_tree()->is_editor_hint() || !network_peer.is_valid())
 		return;
 
-	if(p_what == NOTIFICATION_ENTER_TREE) {
-		get_tree()->connect("idle_frame", this, "_on_idle_frame");
-	} else if (p_what == NOTIFICATION_EXIT_TREE) {
-		get_tree()->disconnect("idle_frame", this, "_on_idle_frame");
+	if(p_what == NOTIFICATION_FIXED_PROCESS) {
+		if(poll_mode == MODE_FIXED)
+			_network_poll();
+		if(signal_mode == MODE_FIXED)
+			_network_process();
+	} else if (p_what == NOTIFICATION_PROCESS) {
+		if(poll_mode == MODE_IDLE)
+			_network_poll();
+		if(signal_mode == MODE_IDLE)
+			_network_process();
 	}
 }
 
-void ENetNode::_on_idle_frame() {
-	if(!network_peer.is_valid())
+void ENetNode::_update_process_mode() {
+
+	bool idle = signal_mode == MODE_IDLE || poll_mode == MODE_IDLE;
+	bool fixed = signal_mode == MODE_FIXED || poll_mode == MODE_FIXED;
+
+	if (is_fixed_processing() && !fixed) {
+		set_fixed_process(false);
+	}
+	if (is_processing() && !idle) {
+		set_process(false);
+	}
+
+	if(idle && !is_processing()) {
+		set_process(true);
+	}
+	if(fixed && !is_fixed_processing()) {
+		set_fixed_process(true);
+	}
+}
+
+void ENetNode::set_signal_mode(NetProcessMode p_mode) {
+
+	if(signal_mode == p_mode)
 		return;
 
-	_network_poll();
+	signal_mode = p_mode;
+
+	_update_process_mode();
+}
+
+ENetNode::NetProcessMode ENetNode::get_signal_mode() const{
+	return signal_mode;
+}
+
+void ENetNode::set_poll_mode(NetProcessMode p_mode) {
+
+	if(poll_mode == p_mode)
+		return;
+
+	poll_mode = p_mode;
+
+	_update_process_mode();
+}
+
+ENetNode::NetProcessMode ENetNode::get_poll_mode() const{
+	return poll_mode;
 }
 
 void ENetNode::set_network_peer(const Ref<ENetPacketPeer>& p_network_peer) {
@@ -45,6 +92,20 @@ void ENetNode::set_network_peer(const Ref<ENetPacketPeer>& p_network_peer) {
 		network_peer->connect("server_disconnected",this,"_server_disconnected");
 	}
 }
+
+bool ENetNode::is_network_server() const {
+
+	ERR_FAIL_COND_V(!network_peer.is_valid(),false);
+	return network_peer->is_server();
+
+}
+
+int ENetNode::get_network_unique_id() const {
+
+	ERR_FAIL_COND_V(!network_peer.is_valid(),0);
+	return network_peer->get_unique_id();
+}
+
 
 void ENetNode::_network_peer_connected(int p_id) {
 
@@ -113,8 +174,11 @@ void ENetNode::_network_poll() {
 		return;
 
 	network_peer->poll();
+}
 
-	if (!network_peer.is_valid()) //it's possible that polling might have resulted in a disconnection, so check here
+void ENetNode::_network_process() {
+
+	if (!network_peer.is_valid() || network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED)
 		return;
 
 	while(network_peer->get_available_packet_count()) {
@@ -359,13 +423,28 @@ void ENetNode::_bind_methods() {
 	ADD_SIGNAL( MethodInfo("server_packet",PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
 	ADD_SIGNAL( MethodInfo("peer_packet",PropertyInfo(Variant::INT,"peer"),PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
 
-	ObjectTypeDB::bind_method(_MD("_on_idle_frame"),&ENetNode::_on_idle_frame);
 	ObjectTypeDB::bind_method(_MD("set_network_peer","peer:ENetPacketPeer"),&ENetNode::set_network_peer);
 	ObjectTypeDB::bind_method(_MD("_network_peer_connected"),&ENetNode::_network_peer_connected);
 	ObjectTypeDB::bind_method(_MD("_network_peer_disconnected"),&ENetNode::_network_peer_disconnected);
 	ObjectTypeDB::bind_method(_MD("_connected_to_server"),&ENetNode::_connected_to_server);
 	ObjectTypeDB::bind_method(_MD("_connection_failed"),&ENetNode::_connection_failed);
 	ObjectTypeDB::bind_method(_MD("_server_disconnected"),&ENetNode::_server_disconnected);
+
+	// Basic infos
+	ObjectTypeDB::bind_method(_MD("is_network_server"),&ENetNode::is_network_server);
+	ObjectTypeDB::bind_method(_MD("get_network_unique_id"),&ENetNode::get_network_unique_id);
+
+
+	// Signal Handling
+	BIND_CONSTANT(MODE_IDLE);
+	BIND_CONSTANT(MODE_FIXED);
+	ObjectTypeDB::bind_method(_MD("set_signal_mode","mode"),&ENetNode::set_signal_mode);
+	ObjectTypeDB::bind_method(_MD("get_signal_mode"),&ENetNode::get_signal_mode);
+	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"signal_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),_SCS("set_signal_mode"),_SCS("get_signal_mode"));
+	ObjectTypeDB::bind_method(_MD("set_poll_mode","mode"),&ENetNode::set_poll_mode);
+	ObjectTypeDB::bind_method(_MD("get_poll_mode"),&ENetNode::get_poll_mode);
+	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"poll_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),_SCS("set_poll_mode"),_SCS("get_poll_mode"));
+
 
 	// General purpose method
 	ObjectTypeDB::bind_method(_MD("put_packet:Error", "mode:TransferMode", "target:int", "pkt:RawArray","channel:int"),&ENetNode::put_packet);
@@ -382,12 +461,16 @@ void ENetNode::_bind_methods() {
 }
 
 ENetNode::ENetNode() {
+	poll_mode = MODE_IDLE;
+	signal_mode = MODE_IDLE;
+
 	network_peer = Ref<ENetPacketPeer>();
-	// Pass
+
+	_update_process_mode();
 }
 
 ENetNode::~ENetNode() {
-	// Pass
+
 }
 
 
