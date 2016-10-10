@@ -106,6 +106,12 @@ int ENetNode::get_network_unique_id() const {
 	return network_peer->get_unique_id();
 }
 
+Error ENetNode::kick_client(int p_id) {
+
+	ERR_FAIL_COND_V(!network_peer.is_valid(),ERR_UNCONFIGURED);
+
+	return network_peer->disconnect_peer(p_id);
+}
 
 void ENetNode::_network_peer_connected(int p_id) {
 
@@ -448,6 +454,7 @@ void ENetNode::_bind_methods() {
 
 	// General purpose method
 	ObjectTypeDB::bind_method(_MD("put_packet:Error", "mode:TransferMode", "target:int", "pkt:RawArray","channel:int"),&ENetNode::put_packet);
+	ObjectTypeDB::bind_method(_MD("kick_client", "id:int"),&ENetNode::kick_client);
 
 	// Reliable
 	ObjectTypeDB::bind_method(_MD("broadcast:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast);

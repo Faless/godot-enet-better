@@ -50,6 +50,7 @@ public:
 
 	bool is_network_server() const;
 	int get_network_unique_id() const;
+	Error kick_client(int p_id);
 
 	Error broadcast(const DVector<uint8_t> &p_packet, int p_channel=0);
 	Error send(int p_id, const DVector<uint8_t> &p_packet, int p_channel=0);

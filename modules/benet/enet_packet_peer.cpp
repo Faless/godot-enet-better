@@ -30,6 +30,15 @@ int ENetPacketPeer::get_packet_channel() const{
 
 }
 
+Error ENetPacketPeer::disconnect_peer(int p_id) {
+
+	ERR_FAIL_COND_V(!active,ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V(!peer_map.has(p_id),ERR_DOES_NOT_EXIST);
+
+	enet_peer_disconnect(peer_map[p_id], 0);
+	return OK;
+}
+
 Error ENetPacketPeer::create_server(int p_port, int p_channels, int p_max_clients, int p_in_bandwidth, int p_out_bandwidth){
 
 	ERR_FAIL_COND_V(active,ERR_ALREADY_IN_USE);
