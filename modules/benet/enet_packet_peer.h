@@ -100,6 +100,8 @@ public:
 	virtual Error put_packet_channel(const uint8_t *p_buffer, int p_buffer_size, int p_channel);
 	Error _put_packet_channel(const DVector<uint8_t> &p_buffer, int p_channel);
 
+	virtual Error disconnect_peer(int p_id);
+
 	virtual int get_packet_channel() const;
 	virtual int get_max_packet_size() const;
 
