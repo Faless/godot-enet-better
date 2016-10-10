@@ -1,5 +1,5 @@
 # About
-The `benet` module for godot is a fork of `NetworkedMultiplayerPacketPeer` (although it stays compatible) to allow access to multiple channels and the ability to run multiple clients/servers in the same scene.
+The `benet` module for Godot is a fork of `NetworkedMultiplayerPacketPeer` (although it stays compatible) to allow access to multiple channels and the ability to run multiple clients/servers in the same scene.
 
 The module is composed by two parts:
 
@@ -7,12 +7,15 @@ The module is composed by two parts:
   - `create_server`: Add parameter to specify max channels (default 1)
   - `create_client`: Add parameter to specify max channels (default 1)
   - `put_packet_channel`: New method, allow to put a packet in the specified channel
+  - `send` (`_unreliable`, `_ordered`) allow to send to specific client in reliable, unreliable, ordered way whlie selecting the channel
+  - `broadcast` (`_unreliable`, `_ordered`) allow to broadcast a packet in a reliable, unreliable, ordered way while selecting the channel
 
 - `ENetNode`: Act like `SceneTree`:
-  - Poll on idle time (must be in tree to work!)
-  - Emit signals
+  - Poll on idle/fixed time (must be in tree to work!)
+  - Emit signals on idle/fixed time (must be in tree to work!)
   - Emit additional `server_packet` and `client_packet` signals when receiving packets
-  - Will hopefully support RPC
+  - Allow kicking clients by unique id.
+  - Will hopefully support RPC in the future
 
 # Installation
 Being a module you will need to recompile godot from source. To do that:
