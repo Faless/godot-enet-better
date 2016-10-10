@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resource_file type="PackedScene" subresource_count="4" version="2.2" version_name="Godot Engine v2.2.alpha.custom_build">
+	<ext_resource path="res://server.gd" type="Script" index="0"></ext_resource>
+	<ext_resource path="res://fonts/mono-regular-18.fnt" type="BitmapFont" index="1"></ext_resource>
+	<ext_resource path="res://fonts/mono-bold-20.fnt" type="BitmapFont" index="2"></ext_resource>
+	<main_resource>
+		<dictionary name="_bundled" shared="false">
+			<string> "conn_count" </string>
+			<int> 4 </int>
+			<string> "conns" </string>
+			<int_array  len="24"> 				3, 0, 46, 45, 2, 0, 5, 0, 46, 47, 2, 0, 11, 0, 46, 48, 2, 0, 13, 0, 46, 49, 2, 0 </int_array>
+			<string> "editable_instances" </string>
+			<array  len="0" shared="false">
+			</array>
+			<string> "names" </string>
+			<string_array  len="50">
+				<string> "Panel" </string>
+				<string> "anchor/right" </string>
+				<string> "anchor/bottom" </string>
+				<string> "focus/ignore_mouse" </string>
+				<string> "focus/stop_mouse" </string>
+				<string> "size_flags/horizontal" </string>
+				<string> "size_flags/vertical" </string>
+				<string> "margin/left" </string>
+				<string> "margin/top" </string>
+				<string> "margin/right" </string>
+				<string> "margin/bottom" </string>
+				<string> "script/script" </string>
+				<string> "Server" </string>
+				<string> "HBoxContainer" </string>
+				<string> "custom_constants/separation" </string>
+				<string> "alignment" </string>
+				<string> "BcastUDP" </string>
+				<string> "custom_fonts/font" </string>
+				<string> "toggle_mode" </string>
+				<string> "enabled_focus_mode" </string>
+				<string> "shortcut" </string>
+				<string> "text" </string>
+				<string> "flat" </string>
+				<string> "Button" </string>
+				<string> "ServerTitle" </string>
+				<string> "align" </string>
+				<string> "valign" </string>
+				<string> "percent_visible" </string>
+				<string> "lines_skipped" </string>
+				<string> "max_lines_visible" </string>
+				<string> "Label" </string>
+				<string> "BcastTCP" </string>
+				<string> "ScrollContainer" </string>
+				<string> "scroll/horizontal" </string>
+				<string> "scroll/vertical" </string>
+				<string> "ServerLog" </string>
+				<string> "ENetNode" </string>
+				<string> "signal_mode" </string>
+				<string> "Client" </string>
+				<string> "anchor/top" </string>
+				<string> "editor/display_folded" </string>
+				<string> "RemoveClient" </string>
+				<string> "ClientTitle" </string>
+				<string> "AddClient" </string>
+				<string> "Container" </string>
+				<string> "_on_BcastUDP_pressed" </string>
+				<string> "pressed" </string>
+				<string> "_on_BcastTCP_pressed" </string>
+				<string> "_on_RemoveClient_pressed" </string>
+				<string> "_on_AddClient_pressed" </string>
+			</string_array>
+			<string> "node_count" </string>
+			<int> 15 </int>
+			<string> "node_paths" </string>
+			<array  len="0" shared="false">
+			</array>
+			<string> "nodes" </string>
+			<int_array  len="455"> 				-1, -1, 0, 0, -1, 11, 1, 0, 2, 0, 3, 1, 4, 2, 5, 3, 6, 3, 7, 4, 8, 4, 9, 4, 10, 4, 11, 5, 0, 0, 0, 0, 12, -1, 10, 1, 0, 2, 3, 3, 1, 4, 2, 5, 3, 6, 3, 7, 4, 8, 4, 9, 4, 10, 6, 0, 1, 0, 13, 13, -1, 11, 1, 0, 3, 1, 4, 1, 5, 3, 6, 3, 7, 4, 8, 4, 9, 4, 10, 7, 14, 8, 15, 0, 0, 2, 0, 23, 16, -1, 14, 3, 1, 4, 2, 5, 3, 6, 3, 7, 9, 8, 4, 9, 10, 10, 7, 17, 11, 18, 1, 19, 3, 20, 12, 21, 13, 22, 1, 0, 2, 0, 30, 24, -1, 15, 3, 2, 4, 2, 5, 3, 6, 14, 7, 15, 8, 16, 9, 17, 10, 18, 17, 19, 21, 20, 25, 0, 26, 0, 27, 21, 28, 14, 29, 22, 0, 2, 0, 23, 31, -1, 14, 3, 1, 4, 2, 5, 3, 6, 3, 7, 23, 8, 4, 9, 24, 10, 7, 17, 11, 18, 1, 19, 3, 20, 12, 21, 25, 22, 1, 0, 1, 0, 32, 32, -1, 12, 1, 0, 2, 0, 3, 1, 4, 2, 5, 3, 6, 3, 7, 4, 8, 7, 9, 4, 10, 4, 33, 2, 34, 2, 0, 6, 0, 30, 35, -1, 12, 3, 1, 4, 2, 5, 3, 6, 3, 7, 26, 8, 26, 9, 4, 10, 27, 17, 19, 27, 21, 28, 14, 29, 22, 0, 6, 0, 36, 36, -1, 1, 37, 0, 0, 0, 0, 0, 38, -1, 11, 39, 3, 1, 0, 2, 0, 3, 2, 4, 2, 5, 3, 6, 14, 7, 4, 8, 6, 9, 4, 10, 4, 0, 9, 0, 13, 13, -1, 12, 40, 2, 1, 0, 3, 1, 4, 1, 5, 3, 6, 3, 7, 4, 8, 4, 9, 4, 10, 7, 14, 8, 15, 0, 0, 10, 0, 23, 41, -1, 13, 3, 1, 4, 2, 5, 3, 6, 3, 7, 28, 8, 4, 9, 29, 10, 7, 18, 1, 19, 3, 20, 12, 21, 30, 22, 1, 0, 10, 0, 30, 42, -1, 15, 3, 2, 4, 2, 5, 3, 6, 14, 7, 31, 8, 16, 9, 32, 10, 18, 17, 19, 21, 33, 25, 0, 26, 0, 27, 21, 28, 14, 29, 22, 0, 10, 0, 23, 43, -1, 13, 3, 1, 4, 2, 5, 3, 6, 3, 7, 34, 8, 4, 9, 35, 10, 7, 18, 1, 19, 3, 20, 12, 21, 36, 22, 1, 0, 9, 0, 13, 44, -1, 11, 1, 0, 2, 0, 3, 1, 4, 1, 5, 3, 6, 3, 7, 4, 8, 7, 9, 4, 10, 4, 15, 14, 0 </int_array>
+			<string> "variants" </string>
+			<array  len="37" shared="false">
+				<int> 1 </int>
+				<bool> False </bool>
+				<bool> True </bool>
+				<int> 2 </int>
+				<real> 0 </real>
+				<resource  external="0">  </resource>
+				<real> 0.5 </real>
+				<real> 50 </real>
+				<int> 20 </int>
+				<real> 282 </real>
+				<real> 426 </real>
+				<resource  external="1">  </resource>
+				<resource name=""></resource>				<string> "Broacast UDP" </string>
+				<int> 0 </int>
+				<real> 446 </real>
+				<real> 15 </real>
+				<real> 566 </real>
+				<real> 34 </real>
+				<resource  external="2">  </resource>
+				<string> "Server Log" </string>
+				<real> 1 </real>
+				<int> -1 </int>
+				<real> 586 </real>
+				<real> 741 </real>
+				<string> "Broadcast TCP" </string>
+				<real> -0 </real>
+				<real> 19 </real>
+				<real> 334 </real>
+				<real> 439 </real>
+				<string> "Remove Client" </string>
+				<real> 459 </real>
+				<real> 591 </real>
+				<string> "Client Logs" </string>
+				<real> 611 </real>
+				<real> 689 </real>
+				<string> "Add Client" </string>
+			</array>
+			<string> "version" </string>
+			<int> 2 </int>
+		</dictionary>
+
+	</main_resource>
+</resource_file>
