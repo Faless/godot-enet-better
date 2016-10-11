@@ -15,7 +15,7 @@ The module is composed by two parts:
   - Emit signals on idle/fixed time (must be in tree to work!)
   - Emit additional `server_packet` and `client_packet` signals when receiving packets
   - Allow kicking clients by unique id.
-  - Will hopefully support RPC in the future
+  - Support RPC (still without channels, still without ORDERED mode, you need to apply `node_rpc.patch` to godot)
 
 # Installation
 Being a module you will need to recompile godot from source. To do that:
