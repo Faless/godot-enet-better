@@ -60,7 +60,7 @@ Error ENetPacketPeer::create_server(int p_port, int p_channels, int p_max_client
 	active=true;
 	server=true;
 	refuse_connections=false;
-	channels=p_channels;
+	channels=p_channels+SYSCH_MAX;
 	unique_id=1;
 	connection_status=CONNECTION_CONNECTED;
 	return OK;
@@ -103,7 +103,7 @@ Error ENetPacketPeer::create_client(const IP_Address& p_ip, int p_port, int p_ch
 	active=true;
 	server=false;
 	refuse_connections=false;
-	channels=p_channels;
+	channels=p_channels+SYSCH_MAX;
 
 	return OK;
 }
