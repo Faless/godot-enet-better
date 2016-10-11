@@ -74,9 +74,9 @@ void ENetNode::set_network_peer(const Ref<ENetPacketPeer>& p_network_peer) {
 		network_peer->disconnect("connection_failed",this,"_connection_failed");
 		network_peer->disconnect("server_disconnected",this,"_server_disconnected");
 		connected_peers.clear();
-		//path_get_cache.clear();
-		//path_send_cache.clear();
-		//last_send_cache_id=1;
+		path_get_cache.clear();
+		path_send_cache.clear();
+		last_send_cache_id=1;
 	}
 
 	ERR_EXPLAIN("Supplied NetworkedNetworkPeer must be connecting or connected.");
@@ -116,14 +116,14 @@ Error ENetNode::kick_client(int p_id) {
 void ENetNode::_network_peer_connected(int p_id) {
 
 	connected_peers.insert(p_id);
-	//path_get_cache.insert(p_id,PathGetCache());
+	path_get_cache.insert(p_id,PathGetCache());
 	emit_signal("network_peer_connected",p_id);
 }
 
 void ENetNode::_network_peer_disconnected(int p_id) {
 
 	connected_peers.erase(p_id);
-	//path_get_cache.erase(p_id); //I no longer need your cache, sorry
+	path_get_cache.erase(p_id); //I no longer need your cache, sorry
 	emit_signal("network_peer_disconnected",p_id);
 }
 
@@ -230,9 +230,201 @@ void ENetNode::_network_process() {
 
 }
 
+void ENetNode::_rpc(Node* p_from,int p_to,bool p_unreliable,bool p_set,const StringName& p_name,const Variant** p_arg,int p_argcount) {
+
+	if (network_peer.is_null()) {
+		ERR_EXPLAIN("Attempt to remote call/set when networking is not active in SceneTree.");
+		ERR_FAIL();
+	}
+
+	if (network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_CONNECTING) {
+		ERR_EXPLAIN("Attempt to remote call/set when networking is not connected yet in SceneTree.");
+		ERR_FAIL();
+	}
+
+	if (network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED) {
+		ERR_EXPLAIN("Attempt to remote call/set when networking is disconnected.");
+		ERR_FAIL();
+	}
+
+	if (p_argcount>255) {
+		ERR_EXPLAIN("Too many arguments >255.");
+		ERR_FAIL();
+	}
+
+	if (p_to!=0 && !connected_peers.has(ABS(p_to))) {
+		if (p_to==get_network_unique_id()) {
+			ERR_EXPLAIN("Attempt to remote call/set yourself! unique ID: "+itos(get_network_unique_id()));
+		} else {
+			ERR_EXPLAIN("Attempt to remote call unexisting ID: "+itos(p_to));
+
+		}
+
+		ERR_FAIL();
+	}
+
+	NodePath from_path = get_path().rel_path_to(p_from->get_path());
+	// This ensure packets will be at least 5 bytes long, ugly workaround!
+	if(get_path()==p_from->get_path()) {
+		from_path = NodePath("./.");
+	}
+	ERR_FAIL_COND(from_path.is_empty());
+
+
+
+	//see if the path is cached
+	PathSentCache *psc = path_send_cache.getptr(from_path);
+	if (!psc) {
+		//path is not cached, create
+		path_send_cache[from_path]=PathSentCache();
+		psc = path_send_cache.getptr(from_path);
+		psc->id=last_send_cache_id++;
+
+	}
+
+
+	//create base packet, lots of harcode because it must be tight
+
+	int ofs=0;
+
+#define MAKE_ROOM(m_amount) if (packet_cache.size() < m_amount) packet_cache.resize(m_amount);
+
+	//encode type
+	MAKE_ROOM(1);
+	packet_cache[0]=p_set ? NETWORK_COMMAND_REMOTE_SET : NETWORK_COMMAND_REMOTE_CALL;
+	ofs+=1;
+
+	//encode ID
+	MAKE_ROOM(ofs+4);
+	encode_uint32(psc->id,&packet_cache[ofs]);
+	ofs+=4;
+
+	//encode function name
+	CharString name = String(p_name).utf8();
+	int len = encode_cstring(name.get_data(),NULL);
+	MAKE_ROOM(ofs+len);
+	encode_cstring(name.get_data(),&packet_cache[ofs]);
+	ofs+=len;
+
+	if (p_set) {
+		//set argument
+		Error err = encode_variant(*p_arg[0],NULL,len);
+		ERR_FAIL_COND(err!=OK);
+		MAKE_ROOM(ofs+len);
+		encode_variant(*p_arg[0],&packet_cache[ofs],len);
+		ofs+=len;
+
+	} else {
+		//call arguments
+		MAKE_ROOM(ofs+1);
+		packet_cache[ofs]=p_argcount;
+		ofs+=1;
+		for(int i=0;i<p_argcount;i++) {
+			Error err = encode_variant(*p_arg[i],NULL,len);
+			ERR_FAIL_COND(err!=OK);
+			MAKE_ROOM(ofs+len);
+			encode_variant(*p_arg[i],&packet_cache[ofs],len);
+			ofs+=len;
+		}
+
+	}
+
+	//see if all peers have cached path (is so, call can be fast)
+	bool has_all_peers=true;
+
+	List<int> peers_to_add; //if one is missing, take note to add it
+
+	for (Set<int>::Element *E=connected_peers.front();E;E=E->next()) {
+
+		if (p_to<0 && E->get()==-p_to)
+			continue; //continue, excluded
+
+		if (p_to>0 && E->get()!=p_to)
+			continue; //continue, not for this peer
+
+		Map<int,bool>::Element *F = psc->confirmed_peers.find(E->get());
+
+		if (!F || F->get()==false) {
+			//path was not cached, or was cached but is unconfirmed
+			if (!F) {
+				//not cached at all, take note
+				peers_to_add.push_back(E->get());
+			}
+
+			has_all_peers=false;
+		}
+	}
+
+	//those that need to be added, send a message for this
+
+	for (List<int>::Element *E=peers_to_add.front();E;E=E->next()) {
+
+		//encode function name
+		CharString pname = String(from_path).utf8();
+		int len = encode_cstring(pname.get_data(),NULL);
+
+		Vector<uint8_t> packet;
+
+		packet.resize(1+4+len);
+		packet[0]=NETWORK_COMMAND_SIMPLIFY_PATH;
+		encode_uint32(psc->id,&packet[1]);
+		encode_cstring(pname.get_data(),&packet[5]);
+
+		network_peer->set_target_peer(E->get()); //to all of you
+		network_peer->set_transfer_mode(NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE);
+		network_peer->put_packet(packet.ptr(),packet.size());
+
+		psc->confirmed_peers.insert(E->get(),false); //insert into confirmed, but as false since it was not confirmed
+	}
+
+	//take chance and set transfer mode, since all send methods will use it
+	network_peer->set_transfer_mode(p_unreliable ? NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE : NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE);
+
+	if (has_all_peers) {
+
+		//they all have verified paths, so send fast
+		network_peer->set_target_peer(p_to); //to all of you
+		network_peer->put_packet(packet_cache.ptr(),ofs); //a message with love
+	} else {
+		//not all verified path, so send one by one
+
+		//apend path at the end, since we will need it for some packets
+		CharString pname = String(from_path).utf8();
+		int path_len = encode_cstring(pname.get_data(),NULL);
+		MAKE_ROOM(ofs+path_len);
+		encode_cstring(pname.get_data(),&packet_cache[ofs]);
+
+
+		for (Set<int>::Element *E=connected_peers.front();E;E=E->next()) {
+
+			if (p_to<0 && E->get()==-p_to)
+				continue; //continue, excluded
+
+			if (p_to>0 && E->get()!=p_to)
+				continue; //continue, not for this peer
+
+			Map<int,bool>::Element *F = psc->confirmed_peers.find(E->get());
+			ERR_CONTINUE(!F);//should never happen
+
+			network_peer->set_target_peer(E->get()); //to this one specifically
+
+			if (F->get()==true) {
+				//this one confirmed path, so use id
+				encode_uint32(psc->id,&packet_cache[1]);
+				network_peer->put_packet(packet_cache.ptr(),ofs);
+			} else {
+				//this one did not confirm path yet, so use entire path (sorry!)
+				encode_uint32(0x80000000|ofs,&packet_cache[1]); //offset to path and flag
+				network_peer->put_packet(packet_cache.ptr(),ofs+path_len);
+			}
+
+		}
+	}
+
+}
+
 void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int p_packet_len) {
-	// Not implemented yet!
-/*
+
 	ERR_FAIL_COND(p_packet_len<5);
 
 	uint8_t packet_type = p_packet[0];
@@ -258,7 +450,7 @@ void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int 
 
 				NodePath np = paths;
 
-				node = get_root()->get_node(np);
+				node = get_node(np);
 				if (node==NULL) {
 					ERR_EXPLAIN("Failed to get path from RPC: "+String(np));
 					ERR_FAIL_COND(node==NULL);
@@ -276,7 +468,7 @@ void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int 
 				PathGetCache::NodeInfo *ni = &F->get();
 				//do proper caching later
 
-				node = get_root()->get_node(ni->path);
+				node = get_node(ni->path);
 				if (node==NULL) {
 					ERR_EXPLAIN("Failed to get cached path from RPC: "+String(ni->path));
 					ERR_FAIL_COND(node==NULL);
@@ -397,7 +589,7 @@ void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int 
 
 				network_peer->set_transfer_mode(NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE);
 				network_peer->set_target_peer(p_from);
-				network_peer->put_packet(packet.ptr(),packet.size(),0);
+				network_peer->put_packet(packet.ptr(),packet.size());
 			}
 		} break;
 		case NETWORK_COMMAND_CONFIRM_PATH: {
@@ -415,7 +607,6 @@ void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int 
 			E->get()=true;
 		} break;
 	}
-*/
 }
 
 void ENetNode::_bind_methods() {
@@ -471,6 +662,7 @@ ENetNode::ENetNode() {
 	poll_mode = MODE_IDLE;
 	signal_mode = MODE_IDLE;
 
+	last_send_cache_id=1;
 	network_peer = Ref<ENetPacketPeer>();
 
 	_update_process_mode();
