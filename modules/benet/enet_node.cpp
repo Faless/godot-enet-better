@@ -609,6 +609,195 @@ void ENetNode::_network_process_packet(int p_from, const uint8_t* p_packet, int 
 	}
 }
 
+void ENetNode::rsetp(int p_peer_id,bool p_unreliable,Node *p_node, const StringName& p_property,const Variant& p_value) {
+
+	ERR_FAIL_COND(!(p_node->is_inside_tree()));
+
+	bool skip_rset=false;
+
+	if (p_peer_id==0 || p_peer_id==get_network_unique_id() || (p_peer_id<0 && p_peer_id!=-get_network_unique_id())) {
+		//check that send mode can use local call
+
+
+		bool set_local=false;
+
+		switch(p_node->get_rset_mode(p_property)) {
+
+			case RPC_MODE_DISABLED: {
+				//do nothing
+			} break;
+			case RPC_MODE_REMOTE: {
+				//do nothing also, no need to call local
+			} break;
+			case RPC_MODE_SYNC: {
+				//call it, sync always results in call
+				set_local=true;
+			} break;
+			case RPC_MODE_MASTER: {
+				set_local=p_node->is_network_master();
+				if (set_local) {
+					skip_rset=true;
+				}
+
+			} break;
+			case RPC_MODE_SLAVE: {
+				set_local=!(p_node->is_network_master());
+			} break;
+
+		}
+
+		if (set_local) {
+			bool valid;
+			p_node->set(p_property,p_value,&valid);
+
+			if (!valid) {
+				String error="rset() aborted in local set, property not found:  - "+String(p_property);
+				ERR_PRINTS(error);
+				return;
+			}
+		} else if (p_node->get_script_instance()){
+			//attempt with script
+			ScriptInstance::RPCMode rpc_mode = p_node->get_script_instance()->get_rset_mode(p_property);
+
+			switch(rpc_mode) {
+
+				case ScriptInstance::RPC_MODE_DISABLED: {
+					//do nothing
+				} break;
+				case ScriptInstance::RPC_MODE_REMOTE: {
+					//do nothing also, no need to call local
+				} break;
+				case ScriptInstance::RPC_MODE_SYNC: {
+					//call it, sync always results in call
+					set_local=true;
+				} break;
+				case ScriptInstance::RPC_MODE_MASTER: {
+					set_local=p_node->is_network_master();
+					if (set_local) {
+						skip_rset=true;
+					}
+				} break;
+				case ScriptInstance::RPC_MODE_SLAVE: {
+					set_local=!(p_node->is_network_master());
+				} break;
+			}
+
+			if (set_local) {
+
+				bool valid = p_node->get_script_instance()->set(p_property,p_value);
+
+				if (!valid) {
+					String error="rset() aborted in local script set, property not found:  - "+String(p_property);
+					ERR_PRINTS(error);
+					return;
+				}
+			}
+
+		}
+	}
+
+	if (skip_rset)
+		return;
+
+	const Variant*vptr = &p_value;
+
+	_rpc(p_node,p_peer_id,p_unreliable,true,p_property,&vptr,1);
+}
+
+void ENetNode::rpcp(int p_peer_id,bool p_unreliable,Node *p_node, const StringName& p_method,const Variant** p_arg,int p_argcount) {
+
+	ERR_FAIL_COND(!(p_node->is_inside_tree()));
+
+	bool skip_rpc=false;
+
+	if (p_peer_id==0 || p_peer_id==get_network_unique_id() || (p_peer_id<0 && p_peer_id!=-get_network_unique_id())) {
+		//check that send mode can use local call
+
+
+		bool call_local=false;
+
+		switch(p_node->get_rpc_mode(p_method)) {
+
+			case RPC_MODE_DISABLED: {
+				//do nothing
+			} break;
+			case RPC_MODE_REMOTE: {
+				//do nothing also, no need to call local
+			} break;
+			case RPC_MODE_SYNC: {
+				//call it, sync always results in call
+				call_local=true;
+			} break;
+			case RPC_MODE_MASTER: {
+				call_local=p_node->is_network_master();
+				if (call_local) {
+					skip_rpc=true; //no other master so..
+				}
+			} break;
+			case RPC_MODE_SLAVE: {
+				call_local=!(p_node->is_network_master());
+			} break;
+
+		}
+
+
+		if (call_local) {
+			Variant::CallError ce;
+			p_node->call(p_method,p_arg,p_argcount,ce);
+			if (ce.error!=Variant::CallError::CALL_OK) {
+				String error = Variant::get_call_error_text(p_node,p_method,p_arg,p_argcount,ce);
+				error="rpc() aborted in local call:  - "+error;
+				ERR_PRINTS(error);
+				return;
+			}
+		} else if (p_node->get_script_instance()){
+			//attempt with script
+			ScriptInstance::RPCMode rpc_mode = p_node->get_script_instance()->get_rpc_mode(p_method);
+
+			switch(rpc_mode) {
+
+				case ScriptInstance::RPC_MODE_DISABLED: {
+					//do nothing
+				} break;
+				case ScriptInstance::RPC_MODE_REMOTE: {
+					//do nothing also, no need to call local
+				} break;
+				case ScriptInstance::RPC_MODE_SYNC: {
+					//call it, sync always results in call
+					call_local=true;
+				} break;
+				case ScriptInstance::RPC_MODE_MASTER: {
+					call_local=p_node->is_network_master();
+					if (call_local) {
+						skip_rpc=true; //no other master so..
+					}
+				} break;
+				case ScriptInstance::RPC_MODE_SLAVE: {
+					call_local=!(p_node->is_network_master());
+				} break;
+			}
+
+			if (call_local) {
+				Variant::CallError ce;
+				ce.error=Variant::CallError::CALL_OK;
+				p_node->get_script_instance()->call(p_method,p_arg,p_argcount,ce);
+				if (ce.error!=Variant::CallError::CALL_OK) {
+					String error = Variant::get_call_error_text(p_node,p_method,p_arg,p_argcount,ce);
+					error="rpc() aborted in script local call:  - "+error;
+					ERR_PRINTS(error);
+					return;
+				}
+			}
+		}
+	}
+
+	if (skip_rpc)
+		return;
+
+	_rpc(p_node,p_peer_id,p_unreliable,false,p_method,p_arg,p_argcount);
+}
+
+
 void ENetNode::_bind_methods() {
 	ADD_SIGNAL( MethodInfo("network_peer_connected",PropertyInfo(Variant::INT,"id")));
 	ADD_SIGNAL( MethodInfo("network_peer_disconnected",PropertyInfo(Variant::INT,"id")));

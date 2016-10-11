@@ -69,8 +69,11 @@ protected:
 	static void _bind_methods();
 
 public:
-
+	void rpcp(int p_peer_id,bool p_unreliable,Node *p_node,const StringName& p_method,const Variant** p_arg,int p_argcount);
+	void rsetp(int p_peer_id,bool p_unreliable,Node *p_node, const StringName& p_property,const Variant& p_value);
 	void _rpc(Node* p_from,int p_to,bool p_unreliable,bool p_set,const StringName& p_name,const Variant** p_arg,int p_argcount);
+
+
 	void set_network_peer(const Ref<ENetPacketPeer>& p_network_peer);
 
 	void set_signal_mode(NetProcessMode p_mode);
