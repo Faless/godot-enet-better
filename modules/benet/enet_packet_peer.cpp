@@ -68,6 +68,7 @@ Error ENetPacketPeer::create_server(int p_port, int p_channels, int p_max_client
 Error ENetPacketPeer::create_client(const IP_Address& p_ip, int p_port, int p_channels, int p_in_bandwidth, int p_out_bandwidth){
 
 	ERR_FAIL_COND_V(active,ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V(!p_ip.is_ipv4(), ERR_INVALID_PARAMETER);
 
 	host = enet_host_create (NULL /* create a client host */,
 		    1 /* only allow 1 outgoing connection */,
@@ -81,7 +82,7 @@ Error ENetPacketPeer::create_client(const IP_Address& p_ip, int p_port, int p_ch
 	_setup_compressor();
 
 	ENetAddress address;
-	address.host=p_ip.host;
+	address.host=*((uint32_t *)p_ip.get_ipv4());
 	address.port=p_port;
 
 	//enet_address_set_host (& address, "localhost");
@@ -141,7 +142,7 @@ void ENetPacketPeer::poll(){
 				}
 
 				IP_Address ip;
-				ip.host=event.peer -> address.host;
+				ip.set_ipv4((uint8_t *)&(event.peer -> address.host));
 
 				int *new_id = memnew( int );
 				*new_id = event.data;
@@ -706,5 +707,6 @@ ENetPacketPeer::~ENetPacketPeer(){
 // sets IP for ENet to bind when using create_server
 // if no IP is set, then ENet bind to ENET_HOST_ANY
 void ENetPacketPeer::set_bind_ip(const IP_Address& p_ip){
-	bind_ip=p_ip.host;
+	ERR_FAIL_COND(!p_ip.is_ipv4());
+	bind_ip=*(uint32_t *)p_ip.get_ipv4();
 }

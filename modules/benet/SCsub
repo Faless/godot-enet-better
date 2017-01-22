@@ -5,7 +5,7 @@ Import('env_modules')
 
 env_benet = env_modules.Clone()
 
-if (env["enet"] != "system"): # builtin
+if (env["builtin_enet"] != "system"): # builtin
 	thirdparty_dir = "#thirdparty/enet/"
 	thirdparty_sources = [
 		"callbacks.c",
