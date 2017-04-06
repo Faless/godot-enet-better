@@ -2,7 +2,7 @@
 #define ENET_PACKET_PEER_H
 
 #include "io/compression.h"
-#include "io/networked_multiplayer_peer.h"
+#include "networked_multiplayer_peer.h"
 
 #include <enet/enet.h>
 
