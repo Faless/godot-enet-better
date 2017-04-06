@@ -129,11 +129,11 @@ int enet_socket_send(ENetSocket socket, const ENetAddress *address, const ENetBu
 	size_t i = 0;
 
 	dest.set_ipv6(address->host);
-	sock->set_dest_address(dest, address->port);
+	sock->set_send_address(dest, address->port);
 
 	// Create a single packet.
-	PoolVector<uint8_t> out;
-	PoolVector<uint8_t>::Write w;
+	DVector<uint8_t> out;
+	DVector<uint8_t>::Write w;
 	int size = 0;
 	int pos = 0;
 	for (i = 0; i < bufferCount; i++) {
