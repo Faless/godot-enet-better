@@ -1,0 +1,246 @@
+diff --git a/core/io/packet_peer_udp.cpp b/core/io/packet_peer_udp.cpp
+index 067c1c1bd..fa5082218 100644
+--- a/core/io/packet_peer_udp.cpp
++++ b/core/io/packet_peer_udp.cpp
+@@ -31,6 +31,11 @@
+ 
+ PacketPeerUDP *(*PacketPeerUDP::_create)() = NULL;
+ 
++void PacketPeerUDP::set_blocking_mode(bool p_enable) {
++
++	blocking = p_enable;
++}
++
+ String PacketPeerUDP::_get_packet_ip() const {
+ 
+ 	return get_packet_address();
+@@ -78,4 +83,6 @@ PacketPeerUDP *PacketPeerUDP::create() {
+ }
+ 
+ PacketPeerUDP::PacketPeerUDP() {
++
++	blocking = true;
+ }
+diff --git a/core/io/packet_peer_udp.h b/core/io/packet_peer_udp.h
+index 8fcbc9472..8fdd26cce 100644
+--- a/core/io/packet_peer_udp.h
++++ b/core/io/packet_peer_udp.h
+@@ -36,6 +36,8 @@ class PacketPeerUDP : public PacketPeer {
+ 	OBJ_TYPE(PacketPeerUDP, PacketPeer);
+ 
+ protected:
++	bool blocking;
++
+ 	static PacketPeerUDP *(*_create)();
+ 	static void _bind_methods();
+ 
+@@ -44,6 +46,8 @@ protected:
+ 	Error _set_send_address(const String &p_address, int p_port);
+ 
+ public:
++	void set_blocking_mode(bool p_enable);
++
+ 	virtual Error listen(int p_port, IP_Address p_bind_address = IP_Address("*"), int p_recv_buffer_size = 65536) = 0;
+ 	virtual void close() = 0;
+ 	virtual Error wait() = 0;
+diff --git a/drivers/unix/packet_peer_udp_posix.cpp b/drivers/unix/packet_peer_udp_posix.cpp
+index 6dc762f04..6e9e2d065 100644
+--- a/drivers/unix/packet_peer_udp_posix.cpp
++++ b/drivers/unix/packet_peer_udp_posix.cpp
+@@ -107,10 +107,14 @@ Error PacketPeerUDPPosix::put_packet(const uint8_t *p_buffer, int p_buffer_size)
+ 	errno = 0;
+ 	int err;
+ 
++	_set_sock_blocking(blocking);
++
+ 	while ((err = sendto(sock, p_buffer, p_buffer_size, 0, (struct sockaddr *)&addr, addr_size)) != p_buffer_size) {
+ 
+ 		if (errno != EAGAIN) {
+ 			return FAILED;
++		} else if (!blocking) {
++			return ERR_UNAVAILABLE;
+ 		}
+ 	}
+ 
+@@ -173,10 +177,12 @@ Error PacketPeerUDPPosix::_poll(bool p_wait) {
+ 		return FAILED;
+ 	}
+ 
++	_set_sock_blocking(p_wait);
++
+ 	struct sockaddr_storage from = { 0 };
+ 	socklen_t len = sizeof(struct sockaddr_storage);
+ 	int ret;
+-	while ((ret = recvfrom(sockfd, recv_buffer, MIN((int)sizeof(recv_buffer), MAX(rb.space_left() - 24, 0)), p_wait ? 0 : MSG_DONTWAIT, (struct sockaddr *)&from, &len)) > 0) {
++	while ((ret = recvfrom(sockfd, recv_buffer, MIN((int)sizeof(recv_buffer), MAX(rb.space_left() - 24, 0)), 0, (struct sockaddr *)&from, &len)) > 0) {
+ 
+ 		uint32_t port = 0;
+ 
+@@ -243,9 +249,35 @@ int PacketPeerUDPPosix::_get_socket() {
+ 
+ 	sockfd = _socket_create(sock_type, SOCK_DGRAM, IPPROTO_UDP);
+ 
++	if (sockfd != -1)
++		_set_sock_blocking(false);
++
+ 	return sockfd;
+ }
+ 
++void PacketPeerUDPPosix::_set_sock_blocking(bool p_blocking) {
++
++	if (sock_blocking == p_blocking)
++		return;
++
++	sock_blocking = p_blocking;
++
++#ifndef NO_FCNTL
++	int opts = fcntl(sockfd, F_GETFL);
++	int ret = 0;
++	if (sock_blocking)
++		ret = fcntl(sockfd, F_SETFL, opts & ~O_NONBLOCK);
++	else
++		ret = fcntl(sockfd, F_SETFL, opts | O_NONBLOCK);
++	if (ret == -1)
++		perror("setting non-block mode");
++#else
++	int bval = sock_blocking ? 0 : 1;
++	if (ioctl(sockfd, FIONBIO, &bval) == -1)
++		perror("setting non-block mode");
++#endif
++}
++
+ void PacketPeerUDPPosix::set_send_address(const IP_Address &p_address, int p_port) {
+ 
+ 	peer_addr = p_address;
+@@ -264,6 +296,8 @@ void PacketPeerUDPPosix::make_default() {
+ 
+ PacketPeerUDPPosix::PacketPeerUDPPosix() {
+ 
++	blocking = true;
++	sock_blocking = true;
+ 	sockfd = -1;
+ 	packet_port = 0;
+ 	queue_count = 0;
+diff --git a/drivers/unix/packet_peer_udp_posix.h b/drivers/unix/packet_peer_udp_posix.h
+index 027ec3be7..f432b5d73 100644
+--- a/drivers/unix/packet_peer_udp_posix.h
++++ b/drivers/unix/packet_peer_udp_posix.h
+@@ -47,6 +47,7 @@ class PacketPeerUDPPosix : public PacketPeerUDP {
+ 	mutable int packet_port;
+ 	mutable int queue_count;
+ 	int sockfd;
++	bool sock_blocking;
+ 	IP::Type sock_type;
+ 
+ 	IP_Address peer_addr;
+@@ -55,6 +56,7 @@ class PacketPeerUDPPosix : public PacketPeerUDP {
+ 	_FORCE_INLINE_ int _get_socket();
+ 
+ 	static PacketPeerUDP *_create();
++	void _set_sock_blocking(bool p_blocking);
+ 	virtual Error _poll(bool p_block);
+ 
+ public:
+diff --git a/platform/windows/packet_peer_udp_winsock.cpp b/platform/windows/packet_peer_udp_winsock.cpp
+index 38c9d322e..189cb6458 100644
+--- a/platform/windows/packet_peer_udp_winsock.cpp
++++ b/platform/windows/packet_peer_udp_winsock.cpp
+@@ -82,7 +82,7 @@ Error PacketPeerUDPWinsock::put_packet(const uint8_t *p_buffer, int p_buffer_siz
+ 	struct sockaddr_storage addr;
+ 	size_t addr_size = _set_sockaddr(&addr, peer_addr, peer_port, sock_type);
+ 
+-	_set_blocking(true);
++	_set_sock_blocking(blocking);
+ 
+ 	errno = 0;
+ 	int err;
+@@ -90,7 +90,9 @@ Error PacketPeerUDPWinsock::put_packet(const uint8_t *p_buffer, int p_buffer_siz
+ 
+ 		if (WSAGetLastError() != WSAEWOULDBLOCK) {
+ 			return FAILED;
+-		};
++		} else if (!blocking) {
++			return ERR_UNAVAILABLE;
++		}
+ 	}
+ 
+ 	return OK;
+@@ -101,15 +103,13 @@ int PacketPeerUDPWinsock::get_max_packet_size() const {
+ 	return 512; // uhm maybe not
+ }
+ 
+-void PacketPeerUDPWinsock::_set_blocking(bool p_blocking) {
+-	//am no windows expert
+-	//hope this is the right thing
++void PacketPeerUDPWinsock::_set_sock_blocking(bool p_blocking) {
+ 
+-	if (blocking == p_blocking)
++	if (sock_blocking == p_blocking)
+ 		return;
+ 
+-	blocking = p_blocking;
+-	unsigned long par = blocking ? 0 : 1;
++	sock_blocking = p_blocking;
++	unsigned long par = sock_blocking ? 0 : 1;
+ 	if (ioctlsocket(sockfd, FIONBIO, &par)) {
+ 		perror("setting non-block mode");
+ 		//close();
+@@ -139,8 +139,6 @@ Error PacketPeerUDPWinsock::listen(int p_port, IP_Address p_bind_address, int p_
+ 		return ERR_UNAVAILABLE;
+ 	}
+ 
+-	blocking = true;
+-
+ 	printf("UDP Connection listening on port %i\n", p_port);
+ 	rb.resize(nearest_shift(p_recv_buffer_size));
+ 	return OK;
+@@ -166,7 +164,7 @@ Error PacketPeerUDPWinsock::_poll(bool p_wait) {
+ 		return FAILED;
+ 	}
+ 
+-	_set_blocking(p_wait);
++	_set_sock_blocking(p_wait);
+ 
+ 	struct sockaddr_storage from = { 0 };
+ 	int len = sizeof(struct sockaddr_storage);
+@@ -252,6 +250,9 @@ int PacketPeerUDPWinsock::_get_socket() {
+ 
+ 	sockfd = _socket_create(sock_type, SOCK_DGRAM, IPPROTO_UDP);
+ 
++	if (sockfd != -1)
++		_set_sock_blocking(false);
++
+ 	return sockfd;
+ }
+ 
+@@ -273,6 +274,8 @@ PacketPeerUDP *PacketPeerUDPWinsock::_create() {
+ 
+ PacketPeerUDPWinsock::PacketPeerUDPWinsock() {
+ 
++	blocking = true;
++	sock_blocking = true;
+ 	sockfd = -1;
+ 	packet_port = 0;
+ 	queue_count = 0;
+diff --git a/platform/windows/packet_peer_udp_winsock.h b/platform/windows/packet_peer_udp_winsock.h
+index 47e926600..b97ff3bd4 100644
+--- a/platform/windows/packet_peer_udp_winsock.h
++++ b/platform/windows/packet_peer_udp_winsock.h
+@@ -45,6 +45,7 @@ class PacketPeerUDPWinsock : public PacketPeerUDP {
+ 	mutable int packet_port;
+ 	mutable int queue_count;
+ 	int sockfd;
++	bool sock_blocking;
+ 	IP::Type sock_type;
+ 
+ 	IP_Address peer_addr;
+@@ -54,8 +55,7 @@ class PacketPeerUDPWinsock : public PacketPeerUDP {
+ 
+ 	static PacketPeerUDP *_create();
+ 
+-	bool blocking;
+-	void _set_blocking(bool p_blocking);
++	void _set_sock_blocking(bool p_blocking);
+ 
+ 	Error _poll(bool p_wait);
+ 
