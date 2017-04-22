@@ -14,8 +14,8 @@ void register_benet_types() {
 		enet_ok=true;
 	}
 
-	ObjectTypeDB::register_type<ENetPacketPeer>();
-	ObjectTypeDB::register_type<ENetNode>();
+	ClassDB::register_class<ENetPacketPeer>();
+	ClassDB::register_class<ENetNode>();
 }
 
 void unregister_benet_types() {

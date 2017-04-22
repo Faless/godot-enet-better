@@ -410,13 +410,13 @@ Error ENetPacketPeer::put_packet(const uint8_t *p_buffer, int p_buffer_size) {
 	return put_packet_channel(p_buffer, p_buffer_size, channel);
 }
 
-Error ENetPacketPeer::_put_packet_channel(const DVector<uint8_t> &p_buffer, int p_channel) {
+Error ENetPacketPeer::_put_packet_channel(const PoolVector<uint8_t> &p_buffer, int p_channel) {
 
 	int len = p_buffer.size();
 	if (len == 0)
 		return OK;
 
-	DVector<uint8_t>::Read r = p_buffer.read();
+	PoolVector<uint8_t>::Read r = p_buffer.read();
 	return put_packet_channel(&r[0], len, p_channel + SYSCH_MAX);
 }
 
@@ -660,14 +660,14 @@ void ENetPacketPeer::enet_compressor_destroy(void *context) {
 
 void ENetPacketPeer::_bind_methods() {
 
-	ObjectTypeDB::bind_method(_MD("get_packet_channel"), &ENetPacketPeer::get_packet_channel);
-	ObjectTypeDB::bind_method(_MD("create_server", "port", "channels", "max_clients", "in_bandwidth", "out_bandwidth"), &ENetPacketPeer::create_server, DEFVAL(1), DEFVAL(32), DEFVAL(0), DEFVAL(0));
-	ObjectTypeDB::bind_method(_MD("create_client", "ip", "port", "channels", "in_bandwidth", "out_bandwidth"), &ENetPacketPeer::create_client, DEFVAL(1), DEFVAL(0), DEFVAL(0));
-	ObjectTypeDB::bind_method(_MD("close_connection"), &ENetPacketPeer::close_connection);
-	ObjectTypeDB::bind_method(_MD("set_compression_mode", "mode"), &ENetPacketPeer::set_compression_mode);
-	ObjectTypeDB::bind_method(_MD("put_packet_channel:Error", "pkt:RawArray", "channel:int"), &ENetPacketPeer::_put_packet_channel);
-	ObjectTypeDB::bind_method(_MD("get_compression_mode"), &ENetPacketPeer::get_compression_mode);
-	ObjectTypeDB::bind_method(_MD("set_bind_ip", "ip"), &ENetPacketPeer::set_bind_ip);
+	ClassDB::bind_method(D_METHOD("get_packet_channel"), &ENetPacketPeer::get_packet_channel);
+	ClassDB::bind_method(D_METHOD("create_server", "port", "channels", "max_clients", "in_bandwidth", "out_bandwidth"), &ENetPacketPeer::create_server, DEFVAL(1), DEFVAL(32), DEFVAL(0), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("create_client", "ip", "port", "channels", "in_bandwidth", "out_bandwidth"), &ENetPacketPeer::create_client, DEFVAL(1), DEFVAL(0), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("close_connection"), &ENetPacketPeer::close_connection);
+	ClassDB::bind_method(D_METHOD("set_compression_mode", "mode"), &ENetPacketPeer::set_compression_mode);
+	ClassDB::bind_method(D_METHOD("put_packet_channel:Error", "pkt:RawArray", "channel:int"), &ENetPacketPeer::_put_packet_channel);
+	ClassDB::bind_method(D_METHOD("get_compression_mode"), &ENetPacketPeer::get_compression_mode);
+	ClassDB::bind_method(D_METHOD("set_bind_ip", "ip"), &ENetPacketPeer::set_bind_ip);
 
 	BIND_CONSTANT(COMPRESS_NONE);
 	BIND_CONSTANT(COMPRESS_RANGE_CODER);

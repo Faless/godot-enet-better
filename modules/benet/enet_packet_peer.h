@@ -8,7 +8,7 @@
 
 class ENetPacketPeer : public NetworkedMultiplayerPeer {
 
-	OBJ_TYPE(ENetPacketPeer, NetworkedMultiplayerPeer)
+	GDCLASS(ENetPacketPeer, NetworkedMultiplayerPeer)
 public:
 	enum CompressionMode {
 		COMPRESS_NONE,
@@ -98,7 +98,7 @@ public:
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) const; ///< buffer is GONE after next get_packet
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size);
 	virtual Error put_packet_channel(const uint8_t *p_buffer, int p_buffer_size, int p_channel);
-	Error _put_packet_channel(const DVector<uint8_t> &p_buffer, int p_channel);
+	Error _put_packet_channel(const PoolVector<uint8_t> &p_buffer, int p_channel);
 
 	virtual Error disconnect_peer(int p_id);
 

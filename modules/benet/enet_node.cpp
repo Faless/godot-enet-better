@@ -142,31 +142,31 @@ void ENetNode::_server_disconnected() {
 	emit_signal("server_disconnected");
 }
 
-Error ENetNode::broadcast(const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::broadcast(const PoolVector<uint8_t> &p_packet, int p_channel) {
 	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE, 0, p_packet, p_channel);
 }
 
-Error ENetNode::send(int p_id, const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::send(int p_id, const PoolVector<uint8_t> &p_packet, int p_channel) {
 	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_RELIABLE, p_id, p_packet, p_channel);
 }
 
-Error ENetNode::broadcast_unreliable(const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::broadcast_unreliable(const PoolVector<uint8_t> &p_packet, int p_channel) {
 	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE, 0, p_packet, p_channel);
 }
 
-Error ENetNode::send_unreliable(int p_id, const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::send_unreliable(int p_id, const PoolVector<uint8_t> &p_packet, int p_channel) {
 	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE, p_id, p_packet, p_channel);
 }
 
-Error ENetNode::broadcast_ordered(const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::broadcast_ordered(const PoolVector<uint8_t> &p_packet, int p_channel) {
 	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE_ORDERED, 0, p_packet, p_channel);
 }
 
-Error ENetNode::send_ordered(int p_id, const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::send_ordered(int p_id, const PoolVector<uint8_t> &p_packet, int p_channel) {
 	return put_packet(NetworkedMultiplayerPeer::TRANSFER_MODE_UNRELIABLE_ORDERED, p_id, p_packet, p_channel);
 }
 
-Error ENetNode::put_packet(NetworkedMultiplayerPeer::TransferMode p_mode, int p_target, const DVector<uint8_t> &p_packet, int p_channel) {
+Error ENetNode::put_packet(NetworkedMultiplayerPeer::TransferMode p_mode, int p_target, const PoolVector<uint8_t> &p_packet, int p_channel) {
 	ERR_FAIL_COND_V(!network_peer.is_valid(),ERR_UNCONFIGURED);
 
 	network_peer->set_transfer_mode(p_mode);
@@ -206,7 +206,7 @@ void ENetNode::_network_process() {
 
 		} else {
 
-			DVector<uint8_t> pkt;
+			PoolVector<uint8_t> pkt;
 
 			Error err = network_peer->get_packet_buffer(pkt);
 			if (err!=OK) {
@@ -426,45 +426,45 @@ void ENetNode::_bind_methods() {
 	ADD_SIGNAL( MethodInfo("connection_failed"));
 	ADD_SIGNAL( MethodInfo("server_disconnected"));
 
-	ADD_SIGNAL( MethodInfo("server_packet",PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
-	ADD_SIGNAL( MethodInfo("peer_packet",PropertyInfo(Variant::INT,"peer"),PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::RAW_ARRAY,"packet")));
+	ADD_SIGNAL( MethodInfo("server_packet",PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::POOL_BYTE_ARRAY,"packet")));
+	ADD_SIGNAL( MethodInfo("peer_packet",PropertyInfo(Variant::INT,"peer"),PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::POOL_BYTE_ARRAY,"packet")));
 
-	ObjectTypeDB::bind_method(_MD("set_network_peer","peer:ENetPacketPeer"),&ENetNode::set_network_peer);
-	ObjectTypeDB::bind_method(_MD("_network_peer_connected"),&ENetNode::_network_peer_connected);
-	ObjectTypeDB::bind_method(_MD("_network_peer_disconnected"),&ENetNode::_network_peer_disconnected);
-	ObjectTypeDB::bind_method(_MD("_connected_to_server"),&ENetNode::_connected_to_server);
-	ObjectTypeDB::bind_method(_MD("_connection_failed"),&ENetNode::_connection_failed);
-	ObjectTypeDB::bind_method(_MD("_server_disconnected"),&ENetNode::_server_disconnected);
+	ClassDB::bind_method(D_METHOD("set_network_peer","peer:ENetPacketPeer"),&ENetNode::set_network_peer);
+	ClassDB::bind_method(D_METHOD("_network_peer_connected"),&ENetNode::_network_peer_connected);
+	ClassDB::bind_method(D_METHOD("_network_peer_disconnected"),&ENetNode::_network_peer_disconnected);
+	ClassDB::bind_method(D_METHOD("_connected_to_server"),&ENetNode::_connected_to_server);
+	ClassDB::bind_method(D_METHOD("_connection_failed"),&ENetNode::_connection_failed);
+	ClassDB::bind_method(D_METHOD("_server_disconnected"),&ENetNode::_server_disconnected);
 
 	// Basic infos
-	ObjectTypeDB::bind_method(_MD("is_network_server"),&ENetNode::is_network_server);
-	ObjectTypeDB::bind_method(_MD("get_network_unique_id"),&ENetNode::get_network_unique_id);
+	ClassDB::bind_method(D_METHOD("is_network_server"),&ENetNode::is_network_server);
+	ClassDB::bind_method(D_METHOD("get_network_unique_id"),&ENetNode::get_network_unique_id);
 
 
 	// Signal Handling
 	BIND_CONSTANT(MODE_IDLE);
 	BIND_CONSTANT(MODE_FIXED);
-	ObjectTypeDB::bind_method(_MD("set_signal_mode","mode"),&ENetNode::set_signal_mode);
-	ObjectTypeDB::bind_method(_MD("get_signal_mode"),&ENetNode::get_signal_mode);
-	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"signal_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),_SCS("set_signal_mode"),_SCS("get_signal_mode"));
-	ObjectTypeDB::bind_method(_MD("set_poll_mode","mode"),&ENetNode::set_poll_mode);
-	ObjectTypeDB::bind_method(_MD("get_poll_mode"),&ENetNode::get_poll_mode);
-	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"poll_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),_SCS("set_poll_mode"),_SCS("get_poll_mode"));
+	ClassDB::bind_method(D_METHOD("set_signal_mode","mode"),&ENetNode::set_signal_mode);
+	ClassDB::bind_method(D_METHOD("get_signal_mode"),&ENetNode::get_signal_mode);
+	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"signal_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),"set_signal_mode","get_signal_mode");
+	ClassDB::bind_method(D_METHOD("set_poll_mode","mode"),&ENetNode::set_poll_mode);
+	ClassDB::bind_method(D_METHOD("get_poll_mode"),&ENetNode::get_poll_mode);
+	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"poll_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),"set_poll_mode","get_poll_mode");
 
 
 	// General purpose method
-	ObjectTypeDB::bind_method(_MD("put_packet:Error", "mode:TransferMode", "target:int", "pkt:RawArray","channel:int"),&ENetNode::put_packet);
-	ObjectTypeDB::bind_method(_MD("kick_client", "id:int"),&ENetNode::kick_client);
+	ClassDB::bind_method(D_METHOD("put_packet:Error", "mode:TransferMode", "target:int", "pkt:RawArray","channel:int"),&ENetNode::put_packet);
+	ClassDB::bind_method(D_METHOD("kick_client", "id:int"),&ENetNode::kick_client);
 
 	// Reliable
-	ObjectTypeDB::bind_method(_MD("broadcast:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast);
-	ObjectTypeDB::bind_method(_MD("send:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send);
+	ClassDB::bind_method(D_METHOD("broadcast:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast);
+	ClassDB::bind_method(D_METHOD("send:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send);
 	// Unreliable
-	ObjectTypeDB::bind_method(_MD("broadcast_unreliable:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_unreliable);
-	ObjectTypeDB::bind_method(_MD("send_unreliable:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_unreliable);
+	ClassDB::bind_method(D_METHOD("broadcast_unreliable:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_unreliable);
+	ClassDB::bind_method(D_METHOD("send_unreliable:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_unreliable);
 	// Ordered
-	ObjectTypeDB::bind_method(_MD("broadcast_ordered:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_ordered);
-	ObjectTypeDB::bind_method(_MD("send_ordered:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_ordered);
+	ClassDB::bind_method(D_METHOD("broadcast_ordered:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_ordered);
+	ClassDB::bind_method(D_METHOD("send_ordered:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_ordered);
 }
 
 ENetNode::ENetNode() {

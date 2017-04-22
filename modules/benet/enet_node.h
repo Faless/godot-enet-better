@@ -7,7 +7,7 @@
 
 class ENetNode: public Node {
 
-	OBJ_TYPE( ENetNode, Node );
+	GDCLASS( ENetNode, Node );
 
 public:
 
@@ -52,13 +52,13 @@ public:
 	int get_network_unique_id() const;
 	Error kick_client(int p_id);
 
-	Error broadcast(const DVector<uint8_t> &p_packet, int p_channel=0);
-	Error send(int p_id, const DVector<uint8_t> &p_packet, int p_channel=0);
-	Error broadcast_unreliable(const DVector<uint8_t> &p_packet, int p_channel=0);
-	Error send_unreliable(int p_id, const DVector<uint8_t> &p_packet, int p_channel=0);
-	Error broadcast_ordered(const DVector<uint8_t> &p_packet, int p_channel=0);
-	Error send_ordered(int p_id, const DVector<uint8_t> &p_packet, int p_channel=0);
-	Error put_packet(NetworkedMultiplayerPeer::TransferMode p_mode, int p_target, const DVector<uint8_t> &p_packet, int p_channel=0);
+	Error broadcast(const PoolVector<uint8_t> &p_packet, int p_channel=0);
+	Error send(int p_id, const PoolVector<uint8_t> &p_packet, int p_channel=0);
+	Error broadcast_unreliable(const PoolVector<uint8_t> &p_packet, int p_channel=0);
+	Error send_unreliable(int p_id, const PoolVector<uint8_t> &p_packet, int p_channel=0);
+	Error broadcast_ordered(const PoolVector<uint8_t> &p_packet, int p_channel=0);
+	Error send_ordered(int p_id, const PoolVector<uint8_t> &p_packet, int p_channel=0);
+	Error put_packet(NetworkedMultiplayerPeer::TransferMode p_mode, int p_target, const PoolVector<uint8_t> &p_packet, int p_channel=0);
 
 	ENetNode();
 	~ENetNode();

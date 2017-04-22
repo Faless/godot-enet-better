@@ -21,7 +21,7 @@ if (env['builtin_enet'] != 'no'):
     ]
     thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 
-    env_benet.add_source_files(env.modules_sources, thirdparty_sources)
+#    env_benet.add_source_files(env.modules_sources, thirdparty_sources)
     env_benet.Append(CPPPATH=[thirdparty_dir])
     env_benet.Append(CPPFLAGS=["-DGODOT_ENET"])
 
