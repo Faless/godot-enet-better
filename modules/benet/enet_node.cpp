@@ -1,8 +1,9 @@
 
 #include "modules/benet/enet_node.h"
+#include "core/engine.h"
 
 void ENetNode::_notification(int p_what) {
-	if(!is_inside_tree() || get_tree()->is_editor_hint() || !network_peer.is_valid())
+	if(!is_inside_tree() || Engine::get_singleton()->is_editor_hint() || !network_peer.is_valid())
 		return;
 
 	if(p_what == NOTIFICATION_FIXED_PROCESS) {
