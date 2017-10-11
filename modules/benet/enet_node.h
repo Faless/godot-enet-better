@@ -13,7 +13,7 @@ public:
 
 	enum NetProcessMode {
 		MODE_IDLE,
-		MODE_FIXED
+		MODE_PHYSICS
 	};
 
 private:

@@ -6,10 +6,10 @@ void ENetNode::_notification(int p_what) {
 	if(!is_inside_tree() || Engine::get_singleton()->is_editor_hint() || !network_peer.is_valid())
 		return;
 
-	if(p_what == NOTIFICATION_FIXED_PROCESS) {
-		if(poll_mode == MODE_FIXED)
+	if(p_what == NOTIFICATION_PHYSICS_PROCESS) {
+		if(poll_mode == MODE_PHYSICS)
 			_network_poll();
-		if(signal_mode == MODE_FIXED)
+		if(signal_mode == MODE_PHYSICS)
 			_network_process();
 	} else if (p_what == NOTIFICATION_PROCESS) {
 		if(poll_mode == MODE_IDLE)
@@ -22,10 +22,10 @@ void ENetNode::_notification(int p_what) {
 void ENetNode::_update_process_mode() {
 
 	bool idle = signal_mode == MODE_IDLE || poll_mode == MODE_IDLE;
-	bool fixed = signal_mode == MODE_FIXED || poll_mode == MODE_FIXED;
+	bool physics = signal_mode == MODE_PHYSICS || poll_mode == MODE_PHYSICS;
 
-	if (is_fixed_processing() && !fixed) {
-		set_fixed_process(false);
+	if (is_physics_processing() && !physics) {
+		set_physics_process(false);
 	}
 	if (is_processing() && !idle) {
 		set_process(false);
@@ -34,8 +34,8 @@ void ENetNode::_update_process_mode() {
 	if(idle && !is_processing()) {
 		set_process(true);
 	}
-	if(fixed && !is_fixed_processing()) {
-		set_fixed_process(true);
+	if(physics && !is_physics_processing()) {
+		set_physics_process(true);
 	}
 }
 
@@ -444,7 +444,7 @@ void ENetNode::_bind_methods() {
 
 	// Signal Handling
 	BIND_CONSTANT(MODE_IDLE);
-	BIND_CONSTANT(MODE_FIXED);
+	BIND_CONSTANT(MODE_PHYSICS);
 	ClassDB::bind_method(D_METHOD("set_signal_mode","mode"),&ENetNode::set_signal_mode);
 	ClassDB::bind_method(D_METHOD("get_signal_mode"),&ENetNode::get_signal_mode);
 	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"signal_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),"set_signal_mode","get_signal_mode");
