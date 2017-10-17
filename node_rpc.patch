@@ -1,0 +1,93 @@
+diff --git a/scene/main/node.cpp b/scene/main/node.cpp
+index 6e33dcb..102cb0f 100644
+--- a/scene/main/node.cpp
++++ b/scene/main/node.cpp
+@@ -34,6 +34,7 @@
+ #include "io/resource_loader.h"
+ #include "viewport.h"
+ #include "instance_placeholder.h"
++#include "modules/benet/enet_node.h"
+ 
+ VARIANT_ENUM_CAST(Node::PauseMode);
+ VARIANT_ENUM_CAST(Node::NetworkMode);
+@@ -510,6 +511,14 @@ void Node::_propagate_network_owner(Node*p_owner) {
+ 
+ /***** RPC CONFIG ********/
+ 
++Node::RPCMode Node::get_rpc_mode(const StringName& p_method) {
++	Map<StringName,RPCMode>::Element *E = data.rpc_methods.find(p_method);
++
++	if(!E) return RPC_MODE_DISABLED;
++
++	return E->get();
++}
++
+ void Node::rpc_config(const StringName& p_method,RPCMode p_mode) {
+ 
+ 	if (p_mode==RPC_MODE_DISABLED) {
+@@ -519,6 +528,14 @@ void Node::rpc_config(const StringName& p_method,RPCMode p_mode) {
+ 	};
+ }
+ 
++Node::RPCMode Node::get_rset_mode(const StringName& p_property) {
++	Map<StringName,RPCMode>::Element *E = data.rpc_properties.find(p_property);
++
++	if(!E) return RPC_MODE_DISABLED;
++
++	return E->get();
++}
++
+ void Node::rset_config(const StringName& p_property,RPCMode p_mode) {
+ 
+ 	if (p_mode==RPC_MODE_DISABLED) {
+@@ -732,6 +749,18 @@ void Node::rpcp(int p_peer_id,bool p_unreliable,const StringName& p_method,const
+ 
+ 	bool skip_rpc=false;
+ 
++	// Find closest ENetNode, fallback to tree otherwise
++	Node *p = this;
++	ENetNode *enet;
++	while(p!=NULL) {
++		enet = p->cast_to<ENetNode>();
++		if(enet!=NULL) {
++			enet->rpcp(p_peer_id, p_unreliable, this, p_method, p_arg, p_argcount);
++			return;
++		}
++		p=p->get_parent();
++	}
++
+ 	if (p_peer_id==0 || p_peer_id==get_tree()->get_network_unique_id() || (p_peer_id<0 && p_peer_id!=-get_tree()->get_network_unique_id())) {
+ 		//check that send mode can use local call
+ 
+@@ -837,6 +866,18 @@ void Node::rsetp(int p_peer_id,bool p_unreliable,const StringName& p_property,co
+ 
+ 	bool skip_rset=false;
+ 
++	// Find closest ENetNode, fallback to tree otherwise
++	Node *p = this;
++	ENetNode *enet;
++	while(p!=NULL) {
++		enet = p->cast_to<ENetNode>();
++		if(enet!=NULL) {
++			enet->rsetp(p_peer_id, p_unreliable, this, p_property, p_value);
++			return;
++		}
++		p=p->get_parent();
++	}
++
+ 	if (p_peer_id==0 || p_peer_id==get_tree()->get_network_unique_id() || (p_peer_id<0 && p_peer_id!=-get_tree()->get_network_unique_id())) {
+ 		//check that send mode can use local call
+ 
+diff --git a/scene/main/node.h b/scene/main/node.h
+index f18dc81..2734608 100644
+--- a/scene/main/node.h
++++ b/scene/main/node.h
+@@ -395,6 +395,8 @@ public:
+ 	bool can_call_rpc(const StringName& p_method) const;
+ 	bool can_call_rset(const StringName& p_property) const;
+ 
++	RPCMode get_rpc_mode(const StringName& p_method);
++	RPCMode get_rset_mode(const StringName& p_property);
+ 
+ 	Node();
+ 	~Node();

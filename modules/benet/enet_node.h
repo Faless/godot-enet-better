@@ -2,6 +2,7 @@
 #define NETWORKED_MULTIPLAYER_NODE_H
 
 #include "scene/main/node.h"
+#include "io/marshalls.h"
 #include "io/networked_multiplayer_peer.h"
 #include "modules/benet/enet_packet_peer.h"
 
@@ -17,6 +18,34 @@ public:
 	};
 
 private:
+
+	enum NetworkCommands {
+		NETWORK_COMMAND_REMOTE_CALL,
+		NETWORK_COMMAND_REMOTE_SET,
+		NETWORK_COMMAND_SIMPLIFY_PATH,
+		NETWORK_COMMAND_CONFIRM_PATH,
+	};
+
+	//path sent caches
+	struct PathSentCache {
+		Map<int,bool> confirmed_peers;
+		int id;
+	};
+
+	//path get caches
+	struct PathGetCache {
+		struct NodeInfo {
+			NodePath path;
+			ObjectID instance;
+		};
+
+		Map<int,NodeInfo> nodes;
+	};
+
+	Vector<uint8_t> packet_cache;
+	Map<int,PathGetCache> path_get_cache;
+	HashMap<NodePath,PathSentCache> path_send_cache;
+	int last_send_cache_id;
 
 	Ref<ENetPacketPeer> network_peer;
 	Set<int> connected_peers;
@@ -40,6 +69,10 @@ protected:
 	static void _bind_methods();
 
 public:
+	void rpcp(int p_peer_id,bool p_unreliable,Node *p_node,const StringName& p_method,const Variant** p_arg,int p_argcount);
+	void rsetp(int p_peer_id,bool p_unreliable,Node *p_node, const StringName& p_property,const Variant& p_value);
+	void _rpc(Node* p_from,int p_to,bool p_unreliable,bool p_set,const StringName& p_name,const Variant** p_arg,int p_argcount);
+
 
 	void set_network_peer(const Ref<ENetPacketPeer>& p_network_peer);
 
