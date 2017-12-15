@@ -522,7 +522,7 @@ uint32_t ENetPacketPeer::_gen_unique_id() const {
 		hash = hash_djb2_one_32(
 				(uint32_t)OS::get_singleton()->get_unix_time(), hash);
 		hash = hash_djb2_one_32(
-				(uint32_t)OS::get_singleton()->get_data_dir().hash64(), hash);
+				(uint32_t)OS::get_singleton()->get_data_path().hash64(), hash);
 		/*
 		hash = hash_djb2_one_32(
 					(uint32_t)OS::get_singleton()->get_unique_ID().hash64(), hash );
@@ -599,7 +599,7 @@ size_t ENetPacketPeer::enet_compress(void *context, const ENetBuffer *inBuffers,
 	if (enet->dst_compressor_mem.size() < req_size) {
 		enet->dst_compressor_mem.resize(req_size);
 	}
-	int ret = Compression::compress(enet->dst_compressor_mem.ptr(), enet->src_compressor_mem.ptr(), ofs, mode);
+	int ret = Compression::compress(enet->dst_compressor_mem.ptrw(), enet->src_compressor_mem.ptr(), ofs, mode);
 
 	if (ret < 0)
 		return 0;
