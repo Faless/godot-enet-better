@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 Import('env')
 Import('env_modules')
 
@@ -7,10 +5,9 @@ Import('env_modules')
 
 env_benet = env_modules.Clone()
 
-if (env['builtin_enet'] != 'no'):
+if env["builtin_enet"]: # builtin
     thirdparty_dir = "#thirdparty/enet/"
     thirdparty_sources = [
-        "godot.cpp",
         "callbacks.c",
         "compress.c",
         "host.c",
@@ -18,6 +15,7 @@ if (env['builtin_enet'] != 'no'):
         "packet.c",
         "peer.c",
         "protocol.c",
+        "godot.cpp"
     ]
     thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 

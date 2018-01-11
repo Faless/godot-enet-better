@@ -454,18 +454,18 @@ void ENetNode::_bind_methods() {
 
 
 	// General purpose method
-	ClassDB::bind_method(D_METHOD("put_packet:Error", "mode:TransferMode", "target:int", "pkt:RawArray","channel:int"),&ENetNode::put_packet);
-	ClassDB::bind_method(D_METHOD("kick_client", "id:int"),&ENetNode::kick_client);
+	ClassDB::bind_method(D_METHOD("put_packet", "mode", "target", "pkt","channel"),&ENetNode::put_packet);
+	ClassDB::bind_method(D_METHOD("kick_client", "id"),&ENetNode::kick_client);
 
 	// Reliable
-	ClassDB::bind_method(D_METHOD("broadcast:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast);
-	ClassDB::bind_method(D_METHOD("send:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send);
+	ClassDB::bind_method(D_METHOD("broadcast", "pkt","channel"),&ENetNode::broadcast);
+	ClassDB::bind_method(D_METHOD("send", "target", "pkt","channel"),&ENetNode::send);
 	// Unreliable
-	ClassDB::bind_method(D_METHOD("broadcast_unreliable:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_unreliable);
-	ClassDB::bind_method(D_METHOD("send_unreliable:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_unreliable);
+	ClassDB::bind_method(D_METHOD("broadcast_unreliable", "pkt","channel"),&ENetNode::broadcast_unreliable);
+	ClassDB::bind_method(D_METHOD("send_unreliable", "target", "pkt","channel"),&ENetNode::send_unreliable);
 	// Ordered
-	ClassDB::bind_method(D_METHOD("broadcast_ordered:Error", "pkt:RawArray","channel:int"),&ENetNode::broadcast_ordered);
-	ClassDB::bind_method(D_METHOD("send_ordered:Error", "target:int", "pkt:RawArray","channel:int"),&ENetNode::send_ordered);
+	ClassDB::bind_method(D_METHOD("broadcast_ordered", "pkt","channel"),&ENetNode::broadcast_ordered);
+	ClassDB::bind_method(D_METHOD("send_ordered", "target", "pkt","channel"),&ENetNode::send_ordered);
 }
 
 ENetNode::ENetNode() {
