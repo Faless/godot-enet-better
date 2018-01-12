@@ -7,6 +7,11 @@ void ENetPacketPeer::set_transfer_mode(TransferMode p_mode) {
 	transfer_mode = p_mode;
 }
 
+NetworkedMultiplayerPeer::TransferMode ENetPacketPeer::get_transfer_mode() const {
+
+	return transfer_mode;
+}
+
 void ENetPacketPeer::set_target_peer(int p_peer) {
 
 	target_peer = p_peer;
