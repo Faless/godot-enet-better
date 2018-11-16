@@ -1,6 +1,6 @@
 #include "enet_packet_peer.h"
-#include "io/marshalls.h"
-#include "os/os.h"
+#include "core/io/marshalls.h"
+#include "core/os/os.h"
 
 void ENetPacketPeer::set_transfer_mode(TransferMode p_mode) {
 
@@ -582,7 +582,7 @@ size_t ENetPacketPeer::enet_compress(void *context, const ENetBuffer *inBuffers,
 	while (total) {
 		for (size_t i = 0; i < inBufferCount; i++) {
 			int to_copy = MIN(total, int(inBuffers[i].dataLength));
-			copymem(&enet->src_compressor_mem[ofs], inBuffers[i].data, to_copy);
+			copymem(&enet->src_compressor_mem.write[ofs], inBuffers[i].data, to_copy);
 			ofs += to_copy;
 			total -= to_copy;
 		}
