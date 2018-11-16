@@ -670,14 +670,14 @@ void ENetPacketPeer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_client", "ip", "port", "channels", "in_bandwidth", "out_bandwidth"), &ENetPacketPeer::create_client, DEFVAL(1), DEFVAL(0), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("close_connection"), &ENetPacketPeer::close_connection);
 	ClassDB::bind_method(D_METHOD("set_compression_mode", "mode"), &ENetPacketPeer::set_compression_mode);
-	ClassDB::bind_method(D_METHOD("put_packet_channel:Error", "pkt:RawArray", "channel:int"), &ENetPacketPeer::_put_packet_channel);
+	ClassDB::bind_method(D_METHOD("put_packet_channel:Error", "pkt:PoolByteArray", "channel:int"), &ENetPacketPeer::_put_packet_channel);
 	ClassDB::bind_method(D_METHOD("get_compression_mode"), &ENetPacketPeer::get_compression_mode);
 	ClassDB::bind_method(D_METHOD("set_bind_ip", "ip"), &ENetPacketPeer::set_bind_ip);
 
-	BIND_CONSTANT(COMPRESS_NONE);
-	BIND_CONSTANT(COMPRESS_RANGE_CODER);
-	BIND_CONSTANT(COMPRESS_FASTLZ);
-	BIND_CONSTANT(COMPRESS_ZLIB);
+	BIND_ENUM_CONSTANT(COMPRESS_NONE);
+	BIND_ENUM_CONSTANT(COMPRESS_RANGE_CODER);
+	BIND_ENUM_CONSTANT(COMPRESS_FASTLZ);
+	BIND_ENUM_CONSTANT(COMPRESS_ZLIB);
 }
 
 ENetPacketPeer::ENetPacketPeer() {

@@ -443,8 +443,8 @@ void ENetNode::_bind_methods() {
 
 
 	// Signal Handling
-	BIND_CONSTANT(MODE_IDLE);
-	BIND_CONSTANT(MODE_PHYSICS);
+	BIND_ENUM_CONSTANT(MODE_IDLE);
+	BIND_ENUM_CONSTANT(MODE_PHYSICS);
 	ClassDB::bind_method(D_METHOD("set_signal_mode","mode"),&ENetNode::set_signal_mode);
 	ClassDB::bind_method(D_METHOD("get_signal_mode"),&ENetNode::get_signal_mode);
 	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"signal_mode",PROPERTY_HINT_ENUM,"Idle,Fixed"),"set_signal_mode","get_signal_mode");
