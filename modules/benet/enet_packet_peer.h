@@ -1,8 +1,8 @@
 #ifndef ENET_PACKET_PEER_H
 #define ENET_PACKET_PEER_H
 
-#include "io/compression.h"
-#include "io/networked_multiplayer_peer.h"
+#include "core/io/compression.h"
+#include "core/io/networked_multiplayer_peer.h"
 
 #include <enet/enet.h>
 

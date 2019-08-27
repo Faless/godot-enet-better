@@ -2,7 +2,7 @@
 #define NETWORKED_MULTIPLAYER_NODE_H
 
 #include "scene/main/node.h"
-#include "io/networked_multiplayer_peer.h"
+#include "core/io/networked_multiplayer_peer.h"
 #include "modules/benet/enet_packet_peer.h"
 
 class ENetNode: public Node {
