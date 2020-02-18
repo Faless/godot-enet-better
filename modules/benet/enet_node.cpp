@@ -80,8 +80,7 @@ void ENetNode::set_network_peer(const Ref<ENetPacketPeer>& p_network_peer) {
 		//last_send_cache_id=1;
 	}
 
-	ERR_EXPLAIN("Supplied NetworkedNetworkPeer must be connecting or connected.");
-	ERR_FAIL_COND(p_network_peer.is_valid() && p_network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED);
+	ERR_FAIL_COND_MSG(p_network_peer.is_valid() && p_network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED, "Supplied NetworkedNetworkPeer must be connecting or connected.");
 
 	network_peer=p_network_peer;
 
