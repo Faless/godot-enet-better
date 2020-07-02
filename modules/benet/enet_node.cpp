@@ -80,8 +80,7 @@ void ENetNode::set_network_peer(const Ref<ENetPacketPeer>& p_network_peer) {
 		//last_send_cache_id=1;
 	}
 
-	ERR_EXPLAIN("Supplied NetworkedNetworkPeer must be connecting or connected.");
-	ERR_FAIL_COND(p_network_peer.is_valid() && p_network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED);
+	ERR_FAIL_COND_MSG(p_network_peer.is_valid() && p_network_peer->get_connection_status()==NetworkedMultiplayerPeer::CONNECTION_DISCONNECTED, "Supplied NetworkedNetworkPeer must be connecting or connected.");
 
 	network_peer=p_network_peer;
 
@@ -430,7 +429,7 @@ void ENetNode::_bind_methods() {
 	ADD_SIGNAL( MethodInfo("server_packet",PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::POOL_BYTE_ARRAY,"packet")));
 	ADD_SIGNAL( MethodInfo("peer_packet",PropertyInfo(Variant::INT,"peer"),PropertyInfo(Variant::INT,"channel"),PropertyInfo(Variant::POOL_BYTE_ARRAY,"packet")));
 
-	ClassDB::bind_method(D_METHOD("set_network_peer","peer:ENetPacketPeer"),&ENetNode::set_network_peer);
+	ClassDB::bind_method(D_METHOD("set_network_peer","peer"),&ENetNode::set_network_peer);
 	ClassDB::bind_method(D_METHOD("_network_peer_connected"),&ENetNode::_network_peer_connected);
 	ClassDB::bind_method(D_METHOD("_network_peer_disconnected"),&ENetNode::_network_peer_disconnected);
 	ClassDB::bind_method(D_METHOD("_connected_to_server"),&ENetNode::_connected_to_server);

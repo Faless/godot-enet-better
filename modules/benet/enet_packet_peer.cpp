@@ -451,8 +451,7 @@ Error ENetPacketPeer::put_packet_channel(const uint8_t *p_buffer, int p_buffer_s
 
 		E = peer_map.find(ABS(target_peer));
 		if (!E) {
-			ERR_EXPLAIN("Invalid Target Peer: " + itos(target_peer));
-			ERR_FAIL_V(ERR_INVALID_PARAMETER);
+			ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Invalid Target Peer: " + itos(target_peer));
 		}
 	}
 
@@ -670,7 +669,7 @@ void ENetPacketPeer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_client", "ip", "port", "channels", "in_bandwidth", "out_bandwidth"), &ENetPacketPeer::create_client, DEFVAL(1), DEFVAL(0), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("close_connection"), &ENetPacketPeer::close_connection);
 	ClassDB::bind_method(D_METHOD("set_compression_mode", "mode"), &ENetPacketPeer::set_compression_mode);
-	ClassDB::bind_method(D_METHOD("put_packet_channel:Error", "pkt:PoolByteArray", "channel:int"), &ENetPacketPeer::_put_packet_channel);
+	ClassDB::bind_method(D_METHOD("put_packet_channel", "pkt", "channel"), &ENetPacketPeer::_put_packet_channel);
 	ClassDB::bind_method(D_METHOD("get_compression_mode"), &ENetPacketPeer::get_compression_mode);
 	ClassDB::bind_method(D_METHOD("set_bind_ip", "ip"), &ENetPacketPeer::set_bind_ip);
 
